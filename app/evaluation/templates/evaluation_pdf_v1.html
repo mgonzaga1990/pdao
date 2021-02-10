@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Evaluation Form</title>
+        <style type="text/css">
+            
+        </style>
+    </head>
+    <body>
+        <img src="http://localhost/media/image/banner.png" height="80"/>
+        <div style="margin-top:10px;">
+            <table style="width:100%">
+                <tr>
+                    <td style="border-bottom:1px solid #ccc;padding-top:5px;padding-left:5px;">
+                        <b style="background-color:#80b3ff;">Personal Information</b>
+                        <ul id="menu">
+                            <li>FULLNAME: {{person.fullname}}</li>
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+            <table style="width:100%">
+                {% for e in diagnosis %}
+                    <tr>
+                        <td style="padding-top:5px;padding-left:5px;">
+                            <b style="background-color:#80b3ff;">{{e.name}}</b>
+                            <ul>
+                                {% for d in e.diagnosis %}
+                                    <li><b></i>{{d.name}}</i></b>
+                                    <ul>
+                                        {% for dv in d.devices %}
+                                            <li>{{dv.name}}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="border-bottom:1px solid #ccc;margin-left:20px;padding-top:5px;">
+                            <ol>
+                                {% for q in e.questions %}
+                                    <li><b>{{q.name}}</b> - 
+                                        {{q.answer}}
+                                    </li>
+                                {% endfor %}
+                            </ol>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,30 @@
+version: '3.7'
+
+services:
+  app:
+    build:
+      context: ./app
+    command: "gunicorn --workers=2 --bind=0.0.0.0:8000 app.wsgi:application --capture-output"
+    environment:
+      - DEBUG=0
+      - SECRET_KEY=sampleS3cR3t!
+      - ALLOWED_HOSTS=127.0.0.1,localhost,[::1]
+    volumes:
+    - static_volume:/app/static
+    - media_volume:/app/media
+
+  proxy:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+    volumes:
+    - static_volume:/app/static
+    - media_volume:/app/media
+    depends_on:
+      - app
+
+
+volumes:
+  static_volume:
+  media_volume:

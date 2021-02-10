@@ -1,0 +1,360 @@
+{% extends "admin/change_form.html" %}
+{% block content %}
+<div id="content-main" class="flex">
+    <h1>Evaluation Form</h1>
+    <ul class="object-tools">
+        <li>
+            <a href="" id ="disability_add" class="addlink">Add Disability</a>
+        </li>
+    </ul>
+
+    <fieldset class="module aligned">
+        <h2>Person Information</h2>
+        <div class="content-main">
+            <h3>Basic Information</h3>
+            <fieldset class="module aligned">
+                <div class="form-row">
+                    <div>
+                        <label for="fullname">Fullname</label>
+                        <input type="text" name="fullname" class="vTextField" value="{{person.fullname}}" readonly/>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div>
+                        <label for="fullname">Gender</label>
+                        <input type="text" name="fullname" class="vTextField" value="{{person.genderVal}}" readonly/>
+                    </div>
+                </div>
+            </fieldset>
+
+            <h3>Address Information</h3>
+            {{address}}
+        </div>
+    </fieldset>
+    <form method="post">
+        {% csrf_token %}
+        <fieldset class="module aligned disability_module">
+            <h2>Disability Information</h2>
+
+            <div class="form-row eval-form" id="disability_0" name="eval-form">
+                <div>
+                    <a class="inline-deletelink" href="#" onclick="removeDisability(0)">Remove</a>
+                </div>
+                <label class="required" for="disabilityInfo_0">Disability</label>
+                <select name="disability_id" id="disabilityInfo_0" onchange="addDetail(this,0)">
+                    <option>---</option>
+                    {% for disability in disabilities %}
+                    <option value="{{disability.id}}">{{disability.name}}</option>
+                    {% endfor %}
+                </select>
+
+            </div>
+        </fieldset>
+
+        <div class="submit-row">
+            <input type="button" value="save" class="default" id="submit_evaluation"/>
+        </div>
+    </form>
+</div>
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+
+<script>
+
+    function disableF5(e) { if ((e.which || e.keyCode) == 116 || (e.which || e.keyCode) == 82) e.preventDefault(); };
+
+    $(document).ready(function(){
+        //disable refresh
+        $(document).on("keydown", disableF5);
+
+        //check if there is an existing data
+        var existing_form = {{evaluation|safe}}
+        if(existing_form !== undefined || null !== existing_form){
+            console.log(existing_form);
+
+            //remove 1st blank div
+            $("#disability_0").remove();
+
+            $.each(existing_form,function(index,value){
+                var disabilityIndex= $("fieldset.module > div.eval-form").length
+
+                //display disability
+                $('fieldset.disability_module').append('<div class="form-row eval-form" name="eval-form" id="disability_' + disabilityIndex + '">' +
+                    '<div><a class="inline-deletelink" href="#" onclick="removeDisability(' + disabilityIndex + ')">Remove</a></div>' +
+                    '<label class="required" for="disabilityInfo_' + disabilityIndex + '">Disability</label>' +
+                    '<select name="disability_id" id="disabilityInfo_' + disabilityIndex + '" onchange="addDetail(this,' + disabilityIndex + ')">' +
+                    `<option value="${value.id}">${value.name}</option>` +
+                    '{% for disability in disabilities %}' +
+                    '<option value="{{disability.id}}">{{disability.name}}</option>' +
+                    '{% endfor %}' +
+                    '</select></div>'
+                );
+
+                //display details question and assistive
+                addDetail(null,disabilityIndex,value.id)
+            });
+
+
+        }
+
+        $('#disability_add').click(function(e){
+            e.preventDefault();
+            var disabilityIndex= $("fieldset.module > div.eval-form").length
+            $('fieldset.disability_module').append('<div class="form-row eval-form" name="eval-form" id="disability_' + disabilityIndex + '">' +
+                '<div><a class="inline-deletelink" href="#" onclick="removeDisability(' + disabilityIndex + ')">Remove</a></div>' +
+                '<label class="required" for="disabilityInfo_' + disabilityIndex + '">Disability</label>' +
+                '<select name="disability_id" id="disabilityInfo_' + disabilityIndex + '" onchange="addDetail(this,' + disabilityIndex + ')">' +
+                '<option>---</option>' + 
+                '{% for disability in disabilities %}' +
+                '<option value="{{disability.id}}">{{disability.name}}</option>' +
+                '{% endfor %}' +
+                '</select></div>'
+            );
+
+            //$('#disabilityInfo_' + disabilityIndex).data('pre',$(this).val());
+        });
+
+        //submit the evaluation
+        $('#submit_evaluation').click(function(e){
+            var evalObj = [];
+
+            var dCount = $("div[name='eval-form']").length;
+            //iterate each form-row div and get values
+            for(ctr = 0 ; ctr <= dCount - 1; ctr++){
+                var diagnosisList = [];
+                var questionList = [];
+
+                //get selected disability
+                var selDisabilityId = $("#disabilityInfo_" + ctr).val();
+                var selDisabilityName = $("#disabilityInfo_" + ctr + ' option:selected').text();
+
+                //get checked diagnosis and devices
+                $('#details_' + ctr +' > tbody  > tr').each(function(index, tr) { 
+                    var isSelectedDiagnosis = tr.childNodes[0].childNodes[0].childNodes[0].checked;
+                    if(isSelectedDiagnosis){
+                        var selDiagnosisNodes = tr.childNodes[0].childNodes[0].childNodes[0].id;
+                        var selDiagnosisId = selDiagnosisNodes.replace('dev_','');
+                        var selDiagnosisName = tr.childNodes[0].childNodes[0].childNodes[1].textContent;
+
+                        //then check if there is device selected
+                        var selDeviceName = tr.childNodes[1].childNodes[0].childNodes[0].classList.item(0);
+                        var selDevices = $('.' + selDeviceName).select2('data');
+
+                        var arrDevices = [];
+                        $.each(selDevices,function(index,value){
+                            arrDevices.push({
+                                id : selDevices[index].id,
+                                name : selDevices[index].text
+                            })
+                        });
+
+                        diagnosisList.push({
+                            id : selDiagnosisId,
+                            name : selDiagnosisName,
+                            devices: arrDevices
+                        })
+                    }
+                });
+
+                //get questions and answers.
+                $('#questions_' + ctr +' > tbody  > tr').each(function(index, tr) { 
+                    var selDiagnosisNodes = tr.childNodes[1].childNodes[0].childNodes[0].className;
+                    var qId = tr.childNodes[1].childNodes[0].childNodes[0].childNodes[0].value;
+                    var qname = tr.childNodes[0].childNodes[0].textContent;
+                    var answer;
+                    if(selDiagnosisNodes == 'checkbox-row'){
+                        var selectedOption = $("input[name='yesno_" + qId + "']:checked").attr('id');
+                        answer = selectedOption;
+                    }else{
+                        var txtFieldNode = tr.childNodes[1].childNodes[0].childNodes[0].childNodes[1].id;
+                        answer = $('textarea#' + txtFieldNode).val();
+                    }
+                    questionList.push({
+                        id: qId,
+                        name: qname,
+                        answer: answer
+                    });
+                });                
+
+                evalObj.push({
+                    id : selDisabilityId,
+                    name: selDisabilityName,
+                    diagnosis : diagnosisList,
+                    questions : questionList
+                });
+            }
+
+            //console.log(JSON.stringify(evalObj));
+            //send to save
+            $.ajax({
+                type: 'POST',
+                url: '/evaluation/api/save',
+                data: JSON.stringify({
+                        person: {
+                            id: {{person.id}},
+                            fullname: '{{person.fullname}}'
+                        },
+                        disabilities : evalObj
+                    }),
+                beforeSend: function(xhr){
+                    var csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+				    xhr.setRequestHeader('content-type','application/json');
+			    	xhr.setRequestHeader('X-CSRFToken',csrftoken);
+                    xhr.setRequestHeader('X-User',{{user}})
+			    },
+                success: function(data, textStatus, xhr){
+                    var status = xhr.status;
+                    if(status === 201){
+                        window.location.replace("/admin/person/person");
+                    }
+                },
+            }).fail(function(e){
+                console.error(e);
+            })
+        })
+    });
+
+    function removeDisability(index){
+        var divDisability = '#disability_' + index;
+        var disabilityIndex= $("fieldset.module > div.form-row").length
+        if(disabilityIndex > 1){
+            var e = document.getElementById('disabilityInfo_'+index);
+            var disabilityId = e.value
+           
+            $(divDisability).remove(); 
+        }
+    }
+
+    function selDiagnosis(z,disabilityId){
+        var sel = '.devices_' + z;
+        var isCheck = 'dev_' + z;
+        var checkBox = document.getElementById(isCheck);
+        if(checkBox.checked){
+             $(sel).prop("disabled", false);
+        }else{
+            $(sel).val(null).trigger('change');  
+            $(sel).prop("disabled", true);
+        }   
+    }
+
+    function loadQuestions(id,index,divDisability){
+       var tableClear = '#questions_' + index;
+       $(tableClear).remove(); 
+       
+       $.ajax({
+            type:'GET',
+            url: '/evaluation/api/questions/' + id,
+            success: function(obj){
+                var count = Object.keys(obj).length;
+                if(count > 0){
+                    $(divDisability).append('<table style="width:100%;margin-top:20px;" id="questions_' + index +'">' + 
+                                                '<thead>' +
+                                                    '<tr>' +
+                                                        '<th class="original">Question(s)</th>' +
+                                                        '<th class="column-name">Answer(s)</th>' +
+                                                    '</tr>'+
+                                                '</thead>' +
+                                                '<tbody></tbody>' +
+                                            '</table>');
+
+                    $.each(obj,function(key,value){
+                        var type;
+                        if(value.question_type === 1){
+                            type='<div class="checkbox-row">'+
+                                    '<input type="hidden" value="' + value.id + '" id="question_id"/>' + 
+                                    '<input type="radio" id="' + value.id +'_yes" name="yesno_' + value.id + '" /><label class="vCheckboxLabel" for="' + value.name +'_yes">Yes</label> ' +
+                                    '<input type="radio" id="' + value.id +'_no" name="yesno_' + value.id + '" /><label class="vCheckboxLabel" for="' + value.name +'_no">No</label></div>';
+                        }else{
+                            type ='<div>' +
+                            '<input type="hidden" value="' + value.id + '" id="question_id"/>' + 
+                            '<textarea cols="5" rows="5" id="q_' + value.id +'" class="vLargeTextField" onblur=addEssayAnswer(' + id +','+ value.id +')></textarea></div>';
+                        }
+
+                        $('#questions_' + index + ' tbody:last').append('<tr class="form-row">' + 
+                                                                            '<td class="original">' + value.name +' ?</td>' +
+                                                                            '<td>' +
+                                                                               '<div class="related-widget-wrapper">' + 
+                                                                                type +
+                                                                                '</div>' +
+                                                                            '</td>' +  
+                                                                        '</tr>');
+                        });                        
+                }  
+            }
+        });
+    }
+
+    function addEssayAnswer(disabilityId,questionId){
+        var answer = $('textarea#q_' + questionId).val();
+    }
+
+    function addDetail(cbo,index,disabilityId=null){
+        var id = disabilityId || cbo.value;
+        var divDisability = '#disability_' + index;
+        var before_change = $(cbo).data('pre');
+
+        var tableClear = '#details_' + index;
+        $(tableClear).remove();
+
+        //load details and devices
+        $.ajax({
+            type:'GET',
+            url: '/evaluation/api/details/' + id,
+            success: function(obj){
+                //prepare table for details and questions
+                $(divDisability).append('<table style="width:100%;margin-top:20px;" id="details_' + index +'">' + 
+                                            '<thead>' +
+                                                '<tr>' +
+                                                    '<th class="original">Details</th>' +
+                                                    '<th class="column-name">Assistive Devices</th>' +
+                                                '</tr>'+
+                                            '</thead>' + 
+                                            '<tbody></tbody>' +
+                                        '</table>');
+
+                $.each(obj,function(key,value){
+                    var opt;
+                    $.each(value.assistive_devices,function(e,v){
+                        opt = opt + '<option value="' + v.id +'">' + v.name +'</option>';
+                    });
+
+                    $('#details_' + index + ' tbody:last').append('<tr>' +
+                                                                    '<td>' + 
+                                                                        '<div class="checkbox-row">' +
+                                                                            '<input type="checkbox" id="dev_' + value.id +'" onclick="selDiagnosis(' + value.id + ',' + id + ')"/>' +
+                                                                            '<label class="vCheckboxLabel" for="dev_' + value.id +'">' + value.name + '</label>' +
+                                                                        '</div>' +
+                                                                    '</td>' +
+                                                                    '<td>' +
+                                                                        '<div class="related-widget-wrapper">' +
+                                                                            '<select class="devices_' + value.id +'" multiple style="width:260px">' +
+                                                                            opt +
+                                                                            '</select>' +
+                                                                        '</div>' +
+                                                                    '</td>' +
+                                                                '</tr>');
+                    
+                    $('.devices_' + value.id).select2({
+                        disabled: true,
+                        allowClear: true
+                    });
+                    //attach events
+                    $('.devices_' + value.id).on('select2:select',function(e){
+                        var deviceId = $('.devices_' + value.id).val();
+                    });  
+
+                    $('.devices_' + value.id).on('select2:unselect',function(e){
+                        var deviceId = e.params.data.id;
+                    });                                                             
+                });                                                      
+            },
+            complete: function(){
+                loadQuestions(id,index,divDisability);
+            }
+        });
+    }
+
+</script>
+{% endblock %}
+
