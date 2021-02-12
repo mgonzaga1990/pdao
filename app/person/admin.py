@@ -11,11 +11,15 @@ from user.models import *
 from evaluation.tables import EvaluationTable
 from evaluation.models import *
 
+from contextlib import suppress
+
 
 class PersonForm(forms.ModelForm):
-    class Meta:
-        model = Person
-        fields = ['pwd_id', 'last_name', 'first_name', 'middle_name','civil_status']
+    gender = forms.ChoiceField(choices=Person.GENDER.choices, widget=forms.RadioSelect())
+
+    type_of_emp = forms.ChoiceField(choices=Person.EMPLOYMENT_TYPES.choices, widget=forms.RadioSelect())
+    category = forms.ChoiceField(choices=Person.EMPLOYMENT_CATEGORY.choices, widget=forms.RadioSelect())
+    status = forms.ChoiceField(choices=Person.EMPLOYMENT_STATUS.choices, widget=forms.RadioSelect())
 
 
 class AddressForm(forms.ModelForm):
@@ -23,8 +27,7 @@ class AddressForm(forms.ModelForm):
 
     class Meta:
         model = Address
-        autocomplete_fields = ("firstname")
-        fields = ["address_line_one", "address_line_two", "purok", "barangy", "default"]
+        fields = ["house_no_and_street", "purok", "barangy", "default"]
 
 
 # formset section
@@ -47,7 +50,7 @@ class AddressInlineFormset(forms.models.BaseInlineFormSet):
 
 
 # inline section
-class AddressInline(admin.StackedInline):
+class AddressInline(admin.TabularInline):
     form = AddressForm
     model = Address
     formset = AddressInlineFormset
@@ -60,6 +63,29 @@ class PersonAdmin(admin.ModelAdmin):
     form = PersonForm
 
     list_display = ('id', 'fullname', 'action')
+
+    fieldsets = (
+        ('Peronal Information', {
+            'fields': ('pwd_id', 'last_name', 'first_name', 'middle_name', 'suffix',
+                       'gender', 'birthday', 'religion', 'ethnic_group', 'civil_status',
+                       'blood_type'
+                       )
+        }),
+        ('Contact Details', {
+            'fields': ('phone_number', 'mobile_number', 'email')
+        }),
+        ('Employment', {
+            'fields': ('status', 'category', 'type_of_emp', 'occupation', 'others')
+        }),
+        ('ORGANIZATION INFORMATION', {
+            'fields': ('org_aff', 'org_contact_person', 'org_address', 'org_tel')
+        }),
+        ('ID REFERENCE NO', {
+            'fields': ('sss_no', 'gsis_no', 'pagibig_no', 'philhealth_no')
+        }
+
+         )
+    )
 
     class Meta:
         model = Person
@@ -114,11 +140,11 @@ class PersonAdmin(admin.ModelAdmin):
             if request.GET.get('action') == 'new':
                 context['disabilities'] = Disability.objects.all()
                 context['user'] = user
-                context['address'] = Address.objects.filter(person=person)
+                context['address'] = Address.objects.get(person=person, default=True)
 
-                eval_json = Evaluation.objects.get(person=person,status=Evaluation.STATUS.LATEST)
-
-                context['evaluation'] = eval_json.jsonData
+                with suppress(Evaluation.DoesNotExist):
+                    eval_json = Evaluation.objects.get(person=person, status=Evaluation.STATUS.LATEST)
+                    context['evaluation'] = eval_json.jsonData
 
                 return TemplateResponse(request, 'evaluation.html', context)
             else:

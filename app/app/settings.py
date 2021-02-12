@@ -52,7 +52,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'app.urls'
-# JQUERY_URL = True
 USE_DJANGO_JQUERY = True
 
 REST_FRAMEWORK = {
@@ -132,6 +131,16 @@ USE_TZ = True
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # MEDIA_URL = '/media/'
 
+# config for local
+# STATICFILES_DIRS = [
+#     BASE_DIR / "static",
+# ]
+
+# STATIC_URL = '/static/'
+# MEDIA_URL = '/media/'
+
+
+# config for docker
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 

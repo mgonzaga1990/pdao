@@ -22,6 +22,7 @@ class Municipality(models.Model):
         verbose_name = u'Municipalities'
         verbose_name_plural = u'Municipalities'
 
+
 class Barangy(models.Model):
     name = models.CharField(max_length=25)
     municipality = models.ForeignKey(Municipality, null=False, on_delete=models.CASCADE)
@@ -43,4 +44,3 @@ class Barangy(models.Model):
 #     class Meta:
 #         verbose_name = u'Purok'
 #         verbose_name_plural = u'Purok'
-   

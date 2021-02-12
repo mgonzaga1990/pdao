@@ -4,10 +4,11 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Q
 from fdfgen import forge_fdf
-from person.models import Person
+from person.models import Person, Address
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from evaluation.models import Evaluation
 
 from .models import *
 from .utils import *
@@ -61,17 +62,71 @@ def doh_pdf(request, evalId):
     fields = [
         ('firstname', person.first_name),
         ('lastname', person.last_name),
-        ('civilstatus', str(Person.CIVIL_STATUS(person.civil_status).name).lower())
+        ('middlename', person.middle_name),
+        ('birthday', person.birthday),
+        ('ethnic_group', str(Person.ETHNIC_GROUP(person.ethnic_group).name).lower()),
+        ('blood_type', str(Person.BLOOD_TYPES(person.blood_type).name)),
+        ('gender', str(Person.GENDER(person.gender).name).lower()),
+        ('civilstatus', str(Person.CIVIL_STATUS(person.civil_status).name).lower()),
+        ('suffix', str(Person.SUFFIX(person.suffix).name).lower()),
+        ('religion', str(Person.RELIGIONS(person.religion).name).lower())
     ]
+
+    address = Address.objects.get(person=person, default=True)
+
+    # address section
+    fields.extend([
+        ('house_no_and_street', address.house_no_and_street),
+        ('barangy', address.barangy),
+        ('municipality', address.barangy.municipality),
+        ('province', address.barangy.municipality.province),
+        ('region', 'V')
+    ])
+
+    # contact section
+    fields.extend([
+        ('phone_number', person.phone_number),
+        ('mobile_number', person.mobile_number),
+        ('email', person.email)
+    ])
+
+    # employment section
+    fields.extend([
+        ('employment', str(Person.EMPLOYMENT_STATUS(person.status).name).lower()),
+        ('category', str(Person.EMPLOYMENT_CATEGORY(person.category).name).lower()),
+        ('type_of_emp', str(Person.EMPLOYMENT_TYPES(person.type_of_emp).name)),
+        ('occupation', str(Person.EMPLOYMENT_OCCUPATION(person.occupation).name)),
+        ('others', person.others)
+    ])
+
+    # organization section
+    fields.extend([
+        ('org_aff', person.org_aff),
+        ('org_contact_person', person.org_contact_person),
+        ('org_address', person.org_address),
+        ('org_tel', person.org_tel),
+    ])
+
+    # IDs section
+    fields.extend([
+        ('sss_no', person.sss_no),
+        ('gsis_no', person.gsis_no),
+        ('pagibig_no', person.pagibig_no),
+        ('philhealth_no', person.philhealth_no),
+    ])
+
+    # evaluation section
+    evaluation = Evaluation.objects.get(id=evalId)
+    evaluation.jsonData
 
     fdf = forge_fdf("", fields, [], [], [])
 
-    with open("media/doh_form/data.fdf", "wb") as fdf_file:
+    with open("media/form/tmp/fdf/data.fdf", "wb") as fdf_file:
         fdf_file.write(fdf)
 
-    template_file = 'media/doh_form/doh_form_v1.pdf'
-    data_file = 'media/doh_form/data.fdf'
-    export_file = 'media/doh_form/doh_filled_v1.pdf'
+    template_file = 'media/form/template/doh_form_v1.pdf'
+    data_file = 'media/form/tmp/fdf/data.fdf'
+    export_file = 'media/form/tmp/doh_filled_v1.pdf'
 
     os.system("pdftk " + template_file + " fill_form " + data_file + " output " + export_file + " flatten")
 
