@@ -4,7 +4,7 @@ services:
   app:
     build:
       context: ./app
-    command: "gunicorn --workers=2 --bind=0.0.0.0:8000 app.wsgi:application --capture-output"
+    command: sh -c "python manage.py runserver 0.0.0.0:8000"
     environment:
       - DEBUG=0
       - SECRET_KEY=sampleS3cR3t!

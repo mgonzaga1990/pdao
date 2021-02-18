@@ -14,6 +14,7 @@ class Province(models.Model):
 class Municipality(models.Model):
     name = models.CharField(max_length=25)
     province = models.ForeignKey(Province, null=False, on_delete=models.CASCADE)
+    logo = models.ImageField(upload_to='images/')
 
     def __str__(self):
         return self.name

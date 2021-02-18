@@ -19,5 +19,6 @@ EXPOSE 8000
 
 ADD . ${APP_ROOT}
 
-#collect static
 RUN python manage.py collectstatic --noinput
+
+#ENTRYPOINT ["/bin/sh","entrypoint.sh"]

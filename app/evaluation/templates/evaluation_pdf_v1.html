@@ -1,56 +1,205 @@
-{% load static %}
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!doctype html>
 <html>
-    <head>
-        <title>Evaluation Form</title>
-        <style type="text/css">
-            
-        </style>
-    </head>
-    <body>
-        <img src="http://localhost/media/image/banner.png" height="80"/>
-        <div style="margin-top:10px;">
-            <table style="width:100%">
-                <tr>
-                    <td style="border-bottom:1px solid #ccc;padding-top:5px;padding-left:5px;">
-                        <b style="background-color:#80b3ff;">Personal Information</b>
-                        <ul id="menu">
-                            <li>FULLNAME: {{person.fullname}}</li>
-                        </ul>
-                    </td>
-                </tr>
-            </table>
-            <table style="width:100%">
-                {% for e in diagnosis %}
-                    <tr>
-                        <td style="padding-top:5px;padding-left:5px;">
-                            <b style="background-color:#80b3ff;">{{e.name}}</b>
-                            <ul>
-                                {% for d in e.diagnosis %}
-                                    <li><b></i>{{d.name}}</i></b>
-                                    <ul>
-                                        {% for dv in d.devices %}
-                                            <li>{{dv.name}}</li>
-                                        {% endfor %}
-                                    </ul>
-                                    </li>
-                                {% endfor %}
+<head>
+    <meta charset="utf-8">
+    <title>Evaluation Report</title>
+
+    <style>
+    .invoice-box {
+        max-width: 800px;
+        margin: auto;
+        padding: 30px;
+        border: 1px solid #eee;
+        box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+        font-size: 12px;
+        line-height: 24px;
+        font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+        color: #555;
+    }
+
+    .invoice-box table {
+        width: 100%;
+        line-height: inherit;
+        text-align: left;
+    }
+
+    .invoice-box table td {
+        padding: 5px;
+        vertical-align: top;
+    }
+
+    .invoice-box table tr td:nth-child(2) {
+        text-align: right;
+    }
+
+    .invoice-box table tr.top table td {
+        padding-bottom: 20px;
+    }
+
+    .invoice-box table tr.top table td.title {
+        font-size: 45px;
+        line-height: 45px;
+        color: #333;
+    }
+
+    .invoice-box table tr.information table td {
+        padding-bottom: 40px;
+    }
+
+    .invoice-box table tr.heading td {
+        background: #eee;
+        border-bottom: 1px solid #ddd;
+        font-weight: bold;
+    }
+
+    .invoice-box table tr.details td {
+        padding-bottom: 20px;
+    }
+
+    .invoice-box table tr.item td{
+        border-bottom: 1px solid #eee;
+    }
+
+    .invoice-box table tr.item.last td {
+        border-bottom: none;
+    }
+
+    .invoice-box table tr.total td:nth-child(2) {
+        border-top: 2px solid #eee;
+        font-weight: bold;
+    }
+
+    @media only screen and (max-width: 600px) {
+        .invoice-box table tr.top table td {
+            width: 100%;
+            display: block;
+            text-align: center;
+        }
+
+        .invoice-box table tr.information table td {
+            width: 100%;
+            display: block;
+            text-align: center;
+        }
+    }
+
+    /** RTL **/
+    .rtl {
+        direction: rtl;
+        font-family: Tahoma, 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+    }
+
+    .rtl table {
+        text-align: right;
+    }
+
+    .rtl table tr td:nth-child(2) {
+        text-align: left;
+    }
+    #background {
+	   margin-top:250px;
+	   position: absolute;
+	   top: 0;
+	   left: 0;
+	   bottom: 0;
+	   right: 0;
+	   z-index: -1;
+	   color:lightgrey;
+       font-size:120px;
+	   transform: rotate(-10deg);
+	   text-align: center;
+	   opacity: 0.5;
+	}
+    </style>
+</head>
+
+<body>
+
+    {% if status >= 1 %}
+	<div id="background">
+		Archived Form
+    </div>
+    {% endif %}
+    {{address.barangy.municipality.logo.url}}
+    <div class="invoice-box">
+        <table cellpadding="0" cellspacing="0">
+            <tr class="top">
+                <td colspan="2">
+                    <table>
+                        <tr>
+                            <td class="title">
+                                <img src="http://localhost/media/{{address.barangy.municipality.logo.url}}" style="width:100px; height:100px;float:left;">
+								<img src="http://localhost{{address.barangy.municipality.logo.url}}" style="width:100px; height:100px;float:right;">
+								<div style="display: inline;font-size:12px;vertical-align: top;line-height: 1.6;text-align: center;">
+									<p><span style="">MUNICIPAL DISABILITY AFFAIRS OFFICE</span><br/>
+									<span style="">Province of Camarines Norte</span><br/>
+									<span style="">Municipality of {{address.barangy.municipality}}</span></p>
+								</div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr class="information">
+                <td colspan="2">
+                    <table>
+                        <tr>
+                            {{address.barangy.municipality.url}}
+                            <td><b>{{person.fullname}}</b><br/>
+                                {{address.house_no_and_street}}<br>
+                                {{address.purok}}<br>
+                                {{address.barangy}}<br/>
+                                {{address.barangy.municipality}},{{address.barangy.municipality.province}}
+                            </td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+
+            {% for e in diagnosis %}
+            <tr class="heading">
+                <td style="text-transform: uppercase;">
+                    {{e.name}}
+                </td>
+                <td></td>
+            </tr>
+            <tr class="item">
+               <td>
+                   <b>Diagnosis</b>
+                   <ul>
+                    {% for d in e.diagnosis %}
+                        <li>
+                            {{d.name}}<br/>
+                            {% if d.devices %}
+                                <b>Assistive Device(s)</b>
+                                <ul>
+                                    {% for dv in d.devices %}
+                                        <li>{{dv.name}}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                   </ul>
+
+                   {% if e.questions %}
+                   <b>Questions</b>
+					<ul>
+                        {% for q in e.questions %}
+						<li>{{q.name}}
+							<ul>
+                                <li>{{q.answer}}</li>
                             </ul>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="border-bottom:1px solid #ccc;margin-left:20px;padding-top:5px;">
-                            <ol>
-                                {% for q in e.questions %}
-                                    <li><b>{{q.name}}</b> - 
-                                        {{q.answer}}
-                                    </li>
-                                {% endfor %}
-                            </ol>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </body>
+						</li>
+                        {% endfor %}
+					</ul>
+                   {% endif %}
+               </td>
+               <td>&nbsp;</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
 </html>

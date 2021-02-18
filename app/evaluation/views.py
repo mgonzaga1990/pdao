@@ -15,6 +15,7 @@ from .utils import *
 
 import os
 from django.http import FileResponse, Http404
+from django.shortcuts import render
 
 
 @api_view(["POST"], )
@@ -141,21 +142,19 @@ def doh_pdf(request, evalId):
 def evaluation_pdf(request, evalId):
     evalForm = Evaluation.objects.get(id=evalId)
     person = Person.objects.get(id=evalForm.person_id)
+    address = Address.objects.get(person=person, default=True)
     context = {
         "person": person,
+        "address": address,
         "diagnosis": evalForm.jsonData,
+        "status": evalForm.status
     }
-    pdf = render_to_pdf('evaluation_pdf_v1.html', context)
-    if pdf:
-        response = HttpResponse(pdf, content_type='application/pdf')
-        filename = "Evaluation_%s.pdf" % ("12341231")
-        content = "inline; filename=%s" % (filename)
-        download = request.GET.get("download")
-        if download:
-            content = "attachment; filename=%s" % (filename)
-        response['Content-Disposition'] = content
-        return response
-    return HttpResponse("Not Found")
+    if evalForm.version == 1.0:
+        template = 'evaluation_pdf_v1.html'
+        return render_to_pdf(template_src=template, context_dict=context)
+        # return render(request, template, context)
+    else:
+        return HttpResponse("Evaluation form version not Found!")
 
 
 @api_view(["GET", ])

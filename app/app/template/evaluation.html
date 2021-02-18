@@ -87,9 +87,8 @@
                 '{% endfor %}' +
                 '</select></div>'
             );
-
             //display details question and assistive
-            addDetail(null, disabilityIndex, value.id,value.diagnosis)
+            addDetail(null, disabilityIndex, value.id,value.diagnosis,value.questions)
         });
 
         {% endif %}
@@ -239,7 +238,8 @@
         }
     }
 
-    function loadQuestions(id, index, divDisability) {
+    function loadQuestions(id, index, divDisability,questions=null) {
+		console.log('loading questions ' + JSON.stringify(questions))
         var tableClear = '#questions_' + index;
         $(tableClear).remove();
 
@@ -260,6 +260,7 @@
                         '</table>');
 
                     $.each(obj, function(key, value) {
+						console.log('value ' + JSON.stringify(value))
                         var type;
                         if (value.question_type === 1) {
                             type = '<div class="checkbox-row">' +
@@ -280,6 +281,25 @@
                             '</div>' +
                             '</td>' +
                             '</tr>');
+
+						//populate answer if there is existing evaluation
+						if(undefined !== questions && null !== questions){
+							$.each(questions,function(qk,qv){
+								var dbId = value.id;
+								var qid = qv.id;
+								if(dbId == qid){
+									var answer = qv.answer;
+									var firstChar = answer.charAt(0);
+									if( firstChar <='9' && firstChar >='0') {
+										//radio button
+										radiobtn = document.getElementById(answer);
+										radiobtn.checked = true;
+									}else{
+										$('#q_' + dbId).val(answer);
+									}
+								}
+							});
+						}
                     });
                 }
             }
@@ -290,8 +310,7 @@
         var answer = $('textarea#q_' + questionId).val();
     }
 
-    function addDetail(cbo, index, disabilityId = null,diagnosis=null) {
-        console.log(diagnosis);
+    function addDetail(cbo, index, disabilityId = null,diagnosis=null,questions=null) {
         var id = disabilityId || cbo.value;
         var divDisability = '#disability_' + index;
         var before_change = $(cbo).data('pre');
@@ -319,6 +338,7 @@
                     var opt;
                     var isChecked = '';
                     var tmpDevices = {};
+					//check if already has existing evaluation
                     if(undefined !== diagnosis && null !== diagnosis){
                         if(diagnosis.some(d => d.id == value.id)){
                             isChecked = 'checked';
@@ -373,7 +393,7 @@
                 });
             },
             complete: function() {
-                loadQuestions(id, index, divDisability);
+                loadQuestions(id, index, divDisability,questions);
             }
         });
     }

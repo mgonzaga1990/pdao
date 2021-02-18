@@ -130,7 +130,7 @@ class PersonAdmin(admin.ModelAdmin):
         person = Person.objects.get(id=person_id)
         user = request.user.id
 
-        table = EvaluationTable(Evaluation.objects.filter(person=person))
+        table = EvaluationTable(Evaluation.objects.filter(person=person).order_by('-created_at'))
         table.paginate(page=request.GET.get("page", 1), per_page=50)
 
         context['opts'] = self.model._meta
